@@ -1,0 +1,64 @@
+{
+  "Collection": [
+    "KDL-0015",
+    "KDL-0016",
+    "KDL-0017"
+  ],
+  "Exfiltration": [
+    "KDL-0016"
+  ],
+  "CredentialAccess": [
+    "KDL-0002",
+    "KDL-0003",
+    "KDL-0011",
+    "KDL-0014",
+    "KDL-0022"
+  ],
+  "Persistence": [
+    "KDL-0007",
+    "KDL-0009",
+    "KDL-0010",
+    "KDL-0011",
+    "KDL-0012",
+    "KDL-0017",
+    "KDL-0023"
+  ],
+  "DefenseEvasion": [
+    "KDL-0001",
+    "KDL-0006",
+    "KDL-0009",
+    "KDL-0013",
+    "KDL-0015",
+    "KDL-0019",
+    "KDL-0020"
+  ],
+  "CommandAndControl": [
+    "KDL-0019"
+  ],
+  "Execution": [
+    "KDL-0020",
+    "KDL-0025"
+  ],
+  "Impact": [
+    "KDL-0021"
+  ],
+  "InitialAccess": [
+    "KDL-0001",
+    "KDL-0004",
+    "KDL-0005",
+    "KDL-0006",
+    "KDL-0018",
+    "KDL-0024"
+  ],
+  "PrivilegeEscalation": [
+    "KDL-0005",
+    "KDL-0007",
+    "KDL-0008",
+    "KDL-0012",
+    "KDL-0013",
+    "KDL-0023"
+  ],
+  "LateralMovement": [
+    "KDL-0024"
+  ]
+}

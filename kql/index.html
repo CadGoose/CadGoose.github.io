@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KQL Detection Library</title>
+<meta name="description" content="25 Microsoft Sentinel and Defender XDR detections mapped to MITRE ATT&amp;CK, by George Mkahail (CadGoose).">
+<style>
+:root { --bg:#f6f3ee; --card:#fff; --ink:#16181d; --muted:#5b6270; --line:#e4ded4; --accent:#9a3412;
+  --high:#b91c1c; --med:#b45309; --low:#1d4ed8; --code:#1b1d23; --codeink:#e8e6e3; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14161a; --card:#1c1f25; --ink:#eceae6; --muted:#a3a9b5;
+  --line:#2c3038; --accent:#fb923c; --high:#f87171; --med:#fbbf24; --low:#93c5fd; --code:#0f1115; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.wrap { max-width:1100px; margin:0 auto; padding:40px 16px 80px; }
+h1 { font-size:clamp(28px,5vw,44px); line-height:1.1; margin:0 0 8px; letter-spacing:-.02em; }
+.lede { color:var(--muted); max-width:720px; margin:0 0 24px; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin:24px 0; }
+.stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+.stat b { display:block; font-size:28px; font-family:ui-monospace,Menlo,monospace; color:var(--accent); }
+.stat span { color:var(--muted); font-size:14px; }
+.matrix { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin:8px 0 28px; }
+.cell { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; gap:8px; font-size:13px; }
+.cell .count { font-family:ui-monospace,monospace; font-weight:700; color:var(--accent); }
+.cell.empty { opacity:.45; }
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:2; }
+input[type=search] { flex:1 1 260px; min-width:0; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:15px; }
+.filter { padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; font-size:14px; }
+.filter[aria-pressed=true] { background:var(--ink); color:var(--bg); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin:0 0 14px; }
+.card header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-family:ui-monospace,monospace; font-size:13px; color:var(--muted); }
+.card h2 { font-size:19px; margin:8px 0 6px; }
+.card p { margin:6px 0; }
+.sev { font-weight:700; } .sev-high { color:var(--high); } .sev-medium { color:var(--med); } .sev-low,.sev-informational { color:var(--low); }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+.chip { font-size:12px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); text-decoration:none; }
+.chip.tech { color:var(--accent); font-family:ui-monospace,monospace; }
+.meta { font-size:14px; color:var(--muted); }
+details { margin-top:8px; } summary { cursor:pointer; font-weight:600; font-size:14px; }
+.qwrap { position:relative; }
+pre { background:var(--code); color:var(--codeink); padding:16px; border-radius:10px; overflow-x:auto; font-size:13px; line-height:1.5; }
+.copy { position:absolute; top:8px; right:8px; font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #444; background:#2a2d35; color:#eee; cursor:pointer; }
+footer { margin-top:40px; color:var(--muted); font-size:14px; }
+a { color:var(--accent); }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p style="font-family:ui-monospace,monospace;color:var(--accent);margin:0 0 8px">kql-detection-library · v1.0.0</p>
+  <h1>KQL Detection Library</h1>
+  <p class="lede">Production-minded hunting and analytics rules for Microsoft Sentinel and Defender XDR. Each detection is mapped to MITRE ATT&amp;CK and ships with false-positive notes and tuning advice from real SOC work.</p>
+  <div class="stats">
+    <div class="stat"><b>25</b><span>detections</span></div>
+    <div class="stat"><b>25</b><span>ATT&amp;CK techniques</span></div>
+    <div class="stat"><b>11</b><span>tactics covered</span></div>
+    <div class="stat"><b>14</b><span>high severity</span></div>
+  </div>
+  <h3>ATT&amp;CK tactic coverage</h3>
+  <div class="matrix"><div class="cell empty"><span class="tname">Reconnaissance</span><span class="count">0</span></div><div class="cell empty"><span class="tname">Resource Development</span><span class="count">0</span></div><div class="cell"><span class="tname">Initial Access</span><span class="count">6</span></div><div class="cell"><span class="tname">Execution</span><span class="count">2</span></div><div class="cell"><span class="tname">Persistence</span><span class="count">7</span></div><div class="cell"><span class="tname">Privilege Escalation</span><span class="count">6</span></div><div class="cell"><span class="tname">Defense Evasion</span><span class="count">7</span></div><div class="cell"><span class="tname">Credential Access</span><span class="count">5</span></div><div class="cell empty"><span class="tname">Discovery</span><span class="count">0</span></div><div class="cell"><span class="tname">Lateral Movement</span><span class="count">1</span></div><div class="cell"><span class="tname">Collection</span><span class="count">3</span></div><div class="cell"><span class="tname">Command and Control</span><span class="count">1</span></div><div class="cell"><span class="tname">Exfiltration</span><span class="count">1</span></div><div class="cell"><span class="tname">Impact</span><span class="count">1</span></div></div>
+  <div class="controls" role="search">
+    <input type="search" id="q" placeholder="Search: MFA, inbox rule, T1110, SigninLogs..." aria-label="Search detections">
+    <button class="filter" aria-pressed="true" data-sev="">All</button>
+    <button class="filter" aria-pressed="false" data-sev="High">High</button>
+    <button class="filter" aria-pressed="false" data-sev="Medium">Medium</button>
+    <button class="filter" aria-pressed="false" data-sev="Low">Low</button>
+  </div>
+  <p id="none" class="hidden">No detections match.</p>
+  <main id="list">
+<article class="card" id="KDL-0002" data-sev="High" data-search="kdl-0002 password spray from a single ip address flags an ip address that produced invalid-password failures (50126) against many distinct accounts within a short window. spraying tries one or two common passwords across many users to stay under per-account lockout thresholds, so the signal is breadth (distinct users), not depth (attempts per user). any successful sign-in from the same ip in the window is surfaced alongside, since that is the account that needs an immediate password reset.
+ credentialaccess t1110.003 signinlogs brute force: password spraying">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0002</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Password spray from a single IP address</h2>
+  <p>Flags an IP address that produced invalid-password failures (50126) against many distinct accounts within a short window. Spraying tries one or two common passwords across many users to stay under per-account lockout thresholds, so the signal is breadth (distinct users), not depth (attempts per user). Any successful sign-in from the same IP in the window is surfaced alongside, since that is the account that needs an immediate password reset.</p>
+  <div class="chips"><span class="chip">Credential Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1110/003/" title="Brute Force: Password Spraying">T1110.003</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0002">Copy</button>
+    <pre><code id="q-KDL-0002">let minDistinctUsers = 10;
+let window = 1h;
+let failures = SigninLogs
+| where TimeGenerated &gt; ago(window)
+| where ResultType == &quot;50126&quot;
+| summarize FailedUsers = dcount(UserPrincipalName), Attempts = count(),
+    SampleUsers = make_set(UserPrincipalName, 25), FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated), UserAgents = make_set(UserAgent, 5)
+    by IPAddress
+| where FailedUsers &gt;= minDistinctUsers;
+let successes = SigninLogs
+| where TimeGenerated &gt; ago(window)
+| where ResultType == &quot;0&quot;
+| summarize CompromisedCandidates = make_set(UserPrincipalName, 25) by IPAddress;
+failures
+| join kind=leftouter successes on IPAddress
+| project-away IPAddress1
+| extend CompromisedCandidates = coalesce(CompromisedCandidates, dynamic([]))
+| order by FailedUsers desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>A shared egress IP (VPN concentrator, campus NAT) after a mass password change.</li><li>Misconfigured app or script retrying with a stale credential across many accounts.</li></ul><ul><li>Lower minDistinctUsers for small tenants (under 200 users), raise it for large shared NAT ranges.</li><li>Exclude corporate egress IPs via a watchlist only after confirming the source.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/security/operations/incident-response-playbook-password-spray" rel="noopener">https://learn.microsoft.com/security/operations/incident-response-playbook-password-spray</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0003" data-sev="High" data-search="kdl-0003 mfa fatigue - repeated mfa denials followed by success detects a user who denied or failed several mfa prompts (500121) and then completed a successful sign-in shortly after. this is the push-bombing pattern where an attacker holding a valid password spams approvals until the user accepts one. number matching reduces but does not eliminate this risk.
+ credentialaccess t1621 signinlogs multi-factor authentication request generation">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0003</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>MFA fatigue - repeated MFA denials followed by success</h2>
+  <p>Detects a user who denied or failed several MFA prompts (500121) and then completed a successful sign-in shortly after. This is the push-bombing pattern where an attacker holding a valid password spams approvals until the user accepts one. Number matching reduces but does not eliminate this risk.</p>
+  <div class="chips"><span class="chip">Credential Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1621/" title="Multi-Factor Authentication Request Generation">T1621</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 2h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0003">Copy</button>
+    <pre><code id="q-KDL-0003">let minDenials = 3;
+let window = 2h;
+let denials = SigninLogs
+| where TimeGenerated &gt; ago(window)
+| where ResultType == &quot;500121&quot;
+| summarize Denials = count(), FirstDenial = min(TimeGenerated), LastDenial = max(TimeGenerated),
+    DenialIPs = make_set(IPAddress, 10) by UserPrincipalName
+| where Denials &gt;= minDenials;
+SigninLogs
+| where TimeGenerated &gt; ago(window)
+| where ResultType == &quot;0&quot; and AuthenticationRequirement == &quot;multiFactorAuthentication&quot;
+| project SuccessTime = TimeGenerated, UserPrincipalName, SuccessIP = IPAddress, AppDisplayName,
+    Country = tostring(LocationDetails.countryOrRegion)
+| join kind=inner denials on UserPrincipalName
+| where SuccessTime between (FirstDenial .. (LastDenial + 30m))
+| summarize arg_min(SuccessTime, *) by UserPrincipalName
+| project UserPrincipalName, Denials, FirstDenial, LastDenial, SuccessTime, SuccessIP, DenialIPs, AppDisplayName, Country</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>User repeatedly mistyping the number-match code on a new phone.</li></ul><ul><li>Raise minDenials if helpdesk sees frequent fat-finger denials; correlate with &quot;user reported suspicious activity&quot; events.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1621/" rel="noopener">https://attack.mitre.org/techniques/T1621/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0005" data-sev="High" data-search="kdl-0005 break-glass (emergency access) account sign-in any sign-in attempt, successful or failed, by an emergency access account. these accounts are excluded from conditional access by design and should almost never be used, so every event deserves a human looking at it.
+ initialaccess privilegeescalation t1078.004 signinlogs aadnoninteractiveusersigninlogs valid accounts: cloud accounts">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0005</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Break-glass (emergency access) account sign-in</h2>
+  <p>Any sign-in attempt, successful or failed, by an emergency access account. These accounts are excluded from Conditional Access by design and should almost never be used, so every event deserves a human looking at it.</p>
+  <div class="chips"><span class="chip">Initial Access</span><span class="chip">Privilege Escalation</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1078/004/" title="Valid Accounts: Cloud Accounts">T1078.004</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs, AADNonInteractiveUserSignInLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 15m, looking back 15m</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0005">Copy</button>
+    <pre><code id="q-KDL-0005">// Replace with your emergency access UPNs, or use: _GetWatchlist(&#x27;BreakGlassAccounts&#x27;) | project SearchKey
+let breakGlass = dynamic([&quot;breakglass01@contoso.onmicrosoft.com&quot;, &quot;breakglass02@contoso.onmicrosoft.com&quot;]);
+union isfuzzy=true SigninLogs, AADNonInteractiveUserSignInLogs
+| where TimeGenerated &gt; ago(15m)
+| where UserPrincipalName in~ (breakGlass)
+// LocationDetails is dynamic in SigninLogs but string in the non-interactive table, so use Location.
+| project TimeGenerated, UserPrincipalName, ResultType, ResultDescription, IPAddress, Country = Location,
+    AppDisplayName, ClientAppUsed, UserAgent, Type</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Scheduled break-glass validation tests (document them and close with that reason).</li></ul><ul><li>Keep this rule at 15 minutes; route to on-call, not the normal queue.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access" rel="noopener">https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0007" data-sev="High" data-search="kdl-0007 privileged entra role assigned outside pim detects a direct (permanent, active) assignment to a privileged entra id role that did not go through privileged identity management. in a tenant that uses pim for just-in-time access, direct assignments bypass approval, justification and expiry and are a classic persistence move after an admin account is compromised.
+ persistence privilegeescalation t1098.003 auditlogs account manipulation: additional cloud roles">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0007</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Privileged Entra role assigned outside PIM</h2>
+  <p>Detects a direct (permanent, active) assignment to a privileged Entra ID role that did not go through Privileged Identity Management. In a tenant that uses PIM for just-in-time access, direct assignments bypass approval, justification and expiry and are a classic persistence move after an admin account is compromised.</p>
+  <div class="chips"><span class="chip">Persistence</span><span class="chip">Privilege Escalation</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1098/003/" title="Account Manipulation: Additional Cloud Roles">T1098.003</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0007">Copy</button>
+    <pre><code id="q-KDL-0007">let privilegedRoles = dynamic([&quot;Global Administrator&quot;, &quot;Privileged Role Administrator&quot;,
+    &quot;Privileged Authentication Administrator&quot;, &quot;Security Administrator&quot;, &quot;Exchange Administrator&quot;,
+    &quot;SharePoint Administrator&quot;, &quot;User Administrator&quot;, &quot;Application Administrator&quot;,
+    &quot;Cloud Application Administrator&quot;, &quot;Conditional Access Administrator&quot;, &quot;Intune Administrator&quot;,
+    &quot;Authentication Administrator&quot;, &quot;Hybrid Identity Administrator&quot;]);
+AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName == &quot;Add member to role&quot;
+| where LoggedByService != &quot;PIM&quot;
+| extend Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName), tostring(InitiatedBy.app.displayName))
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend Target = tostring(TargetResources[0].userPrincipalName)
+| mv-apply prop = TargetResources[0].modifiedProperties on (
+    where tostring(prop.displayName) == &quot;Role.DisplayName&quot;
+    | extend RoleName = trim(@&#x27;&quot;&#x27;, tostring(prop.newValue))
+  )
+| where RoleName in~ (privilegedRoles)
+| project TimeGenerated, Actor, ActorIP, Target, RoleName, Result, CorrelationId</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Initial tenant build-out or an approved break-glass recovery.</li></ul><ul><li>If you do not use PIM yet, this fires for every role change; that is the point - make it a change-control check.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure" rel="noopener">https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0010" data-sev="High" data-search="kdl-0010 new mfa method registered from an ip the user has not signed in from after phishing a password or session, attackers register their own authenticator app or phone number to survive a password reset. this correlates security-info registration events with the user&#x27;s 14-day sign-in ip history and flags registrations from an unfamiliar address.
+ persistence t1098.005 auditlogs signinlogs account manipulation: device registration">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0010</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>New MFA method registered from an IP the user has not signed in from</h2>
+  <p>After phishing a password or session, attackers register their own authenticator app or phone number to survive a password reset. This correlates security-info registration events with the user&#x27;s 14-day sign-in IP history and flags registrations from an unfamiliar address.</p>
+  <div class="chips"><span class="chip">Persistence</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1098/005/" title="Account Manipulation: Device Registration">T1098.005</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs, SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 14d</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0010">Copy</button>
+    <pre><code id="q-KDL-0010">let lookback = 14d;
+let recent = 1h;
+let knownIPs = SigninLogs
+| where TimeGenerated between (ago(lookback) .. ago(recent))
+| where ResultType == &quot;0&quot;
+| summarize KnownIPs = make_set(IPAddress, 200) by UserPrincipalName;
+AuditLogs
+| where TimeGenerated &gt; ago(recent)
+| where LoggedByService == &quot;Authentication Methods&quot;
+| where OperationName in (&quot;User registered security info&quot;, &quot;User changed default security info&quot;,
+    &quot;Admin registered security info&quot;)
+| extend UserPrincipalName = tostring(TargetResources[0].userPrincipalName)
+| extend RegistrationIP = tostring(InitiatedBy.user.ipAddress)
+| join kind=leftouter knownIPs on UserPrincipalName
+| where isempty(RegistrationIP) == false and not(set_has_element(coalesce(KnownIPs, dynamic([])), RegistrationIP))
+| project TimeGenerated, UserPrincipalName, OperationName, ResultReason, RegistrationIP</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>New phone setup from home on a residential IP never used before.</li></ul><ul><li>Restrict security-info registration to trusted locations with a CA policy on &quot;Register security information&quot;.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/conditional-access/how-to-policy-registration" rel="noopener">https://learn.microsoft.com/entra/identity/conditional-access/how-to-policy-registration</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0011" data-sev="High" data-search="kdl-0011 oauth consent granted with high-risk permissions illicit consent grants give an attacker-controlled app durable, mfa-proof access to mail and files. this flags user or admin consents that include high-risk delegated or application permissions such as mail.read, mail.send, files.readwrite.all or offline_access combined with mailbox scopes.
+ credentialaccess persistence t1528 auditlogs steal application access token">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0011</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>OAuth consent granted with high-risk permissions</h2>
+  <p>Illicit consent grants give an attacker-controlled app durable, MFA-proof access to mail and files. This flags user or admin consents that include high-risk delegated or application permissions such as Mail.Read, Mail.Send, Files.ReadWrite.All or offline_access combined with mailbox scopes.</p>
+  <div class="chips"><span class="chip">Credential Access</span><span class="chip">Persistence</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1528/" title="Steal Application Access Token">T1528</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0011">Copy</button>
+    <pre><code id="q-KDL-0011">let riskyScopes = dynamic([&quot;Mail.Read&quot;, &quot;Mail.ReadWrite&quot;, &quot;Mail.Send&quot;, &quot;MailboxSettings.ReadWrite&quot;,
+    &quot;Files.Read.All&quot;, &quot;Files.ReadWrite.All&quot;, &quot;Sites.ReadWrite.All&quot;, &quot;Directory.ReadWrite.All&quot;,
+    &quot;User.ReadWrite.All&quot;, &quot;Application.ReadWrite.All&quot;, &quot;full_access_as_app&quot;, &quot;EWS.AccessAsUser.All&quot;]);
+AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName == &quot;Consent to application&quot;
+| extend Actor = tostring(InitiatedBy.user.userPrincipalName), ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend AppName = tostring(TargetResources[0].displayName), AppId = tostring(TargetResources[0].id)
+| mv-apply prop = TargetResources[0].modifiedProperties on (
+    where tostring(prop.displayName) in (&quot;ConsentAction.Permissions&quot;, &quot;ConsentContext.IsAdminConsent&quot;)
+    | summarize Props = make_bag(bag_pack(tostring(prop.displayName), tostring(prop.newValue)))
+  )
+| extend Permissions = tostring(Props[&quot;ConsentAction.Permissions&quot;]), IsAdminConsent = tostring(Props[&quot;ConsentContext.IsAdminConsent&quot;])
+| extend MatchedScopes = set_intersect(extract_all(@&quot;([A-Za-z_]+\.[A-Za-z.]+|full_access_as_app)&quot;, Permissions), riskyScopes)
+| where array_length(MatchedScopes) &gt; 0
+| project TimeGenerated, Actor, ActorIP, AppName, AppId, IsAdminConsent, MatchedScopes, Permissions</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Legitimate admin-approved integrations (backup, e-signature, CRM mail sync).</li></ul><ul><li>Disable user consent or restrict to verified publishers + low-risk scopes; this rule then catches admin consents only.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/security/operations/incident-response-playbook-app-consent" rel="noopener">https://learn.microsoft.com/security/operations/incident-response-playbook-app-consent</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0013" data-sev="High" data-search="kdl-0013 domain federation or authentication settings changed converting a managed domain to federated, or changing the signing certificate or issuer of an existing federation, lets an attacker mint tokens for any user in that domain (golden saml / &quot;domain trust modification&quot;). these operations are rare enough that every event should be reviewed.
+ privilegeescalation defenseevasion t1484.002 auditlogs domain or tenant policy modification: trust modification">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0013</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Domain federation or authentication settings changed</h2>
+  <p>Converting a managed domain to federated, or changing the signing certificate or issuer of an existing federation, lets an attacker mint tokens for any user in that domain (Golden SAML / &quot;domain trust modification&quot;). These operations are rare enough that every event should be reviewed.</p>
+  <div class="chips"><span class="chip">Privilege Escalation</span><span class="chip">Defense Evasion</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1484/002/" title="Domain or Tenant Policy Modification: Trust Modification">T1484.002</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0013">Copy</button>
+    <pre><code id="q-KDL-0013">AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName in (&quot;Set federation settings on domain&quot;, &quot;Set domain authentication&quot;,
+    &quot;Add unverified domain&quot;, &quot;Verify domain&quot;, &quot;Add verified domain&quot;)
+| extend Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName), tostring(InitiatedBy.app.displayName))
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend Domain = tostring(TargetResources[0].displayName)
+| extend Changes = TargetResources[0].modifiedProperties
+| project TimeGenerated, OperationName, Domain, Actor, ActorIP, Result, Changes</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Planned identity-provider migrations (e.g. AD FS to cloud auth) - tie to a change ticket.</li></ul><ul><li>Do not tune out; route straight to the identity owner.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1484/002/" rel="noopener">https://attack.mitre.org/techniques/T1484/002/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0015" data-sev="High" data-search="kdl-0015 suspicious inbox rule created (bec pattern) business email compromise actors create inbox rules that hide replies from the real user: delete or move messages to obscure folders (rss feeds, conversation history, archive) when they contain words like invoice, payment, wire or the name of the victim&#x27;s finance contact. this flags new or modified rules with those traits.
+ defenseevasion collection t1564.008 officeactivity hide artifacts: email hiding rules">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0015</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Suspicious inbox rule created (BEC pattern)</h2>
+  <p>Business email compromise actors create inbox rules that hide replies from the real user: delete or move messages to obscure folders (RSS Feeds, Conversation History, Archive) when they contain words like invoice, payment, wire or the name of the victim&#x27;s finance contact. This flags new or modified rules with those traits.</p>
+  <div class="chips"><span class="chip">Defense Evasion</span><span class="chip">Collection</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1564/008/" title="Hide Artifacts: Email Hiding Rules">T1564.008</a></div>
+  <p class="meta"><strong>Tables:</strong> OfficeActivity &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0015">Copy</button>
+    <pre><code id="q-KDL-0015">let keywords = dynamic([&quot;invoice&quot;, &quot;payment&quot;, &quot;wire&quot;, &quot;transfer&quot;, &quot;bank&quot;, &quot;remittance&quot;, &quot;ach&quot;,
+    &quot;urgent&quot;, &quot;w2&quot;, &quot;payroll&quot;, &quot;deposit&quot;, &quot;hacked&quot;, &quot;phish&quot;, &quot;suspicious&quot;, &quot;fraud&quot;]);
+let hiddenFolders = dynamic([&quot;RSS Feeds&quot;, &quot;RSS Subscriptions&quot;, &quot;Conversation History&quot;, &quot;Archive&quot;, &quot;Junk Email&quot;, &quot;Deleted Items&quot;]);
+OfficeActivity
+| where TimeGenerated &gt; ago(1h)
+| where Operation in (&quot;New-InboxRule&quot;, &quot;Set-InboxRule&quot;, &quot;UpdateInboxRules&quot;)
+| extend Params = parse_json(Parameters)
+| mv-apply p = Params on (
+    summarize RuleParams = make_bag(bag_pack(tostring(p.Name), tostring(p.Value)))
+  )
+| extend RuleName = tostring(RuleParams.Name),
+    DeletesMail = tostring(RuleParams.DeleteMessage) =~ &quot;True&quot; or tostring(RuleParams.SoftDeleteMessage) =~ &quot;True&quot;,
+    MarksRead = tostring(RuleParams.MarkAsRead) =~ &quot;True&quot;,
+    MoveTo = tostring(RuleParams.MoveToFolder),
+    ForwardTo = strcat(tostring(RuleParams.ForwardTo), tostring(RuleParams.RedirectTo), tostring(RuleParams.ForwardAsAttachmentTo)),
+    Words = tolower(strcat(tostring(RuleParams.SubjectContainsWords), &quot; &quot;, tostring(RuleParams.SubjectOrBodyContainsWords), &quot; &quot;, tostring(RuleParams.BodyContainsWords)))
+| extend KeywordHit = Words has_any (keywords),
+    HiddenFolder = MoveTo has_any (hiddenFolders),
+    ShortName = strlen(RuleName) &lt;= 2 or RuleName matches regex @&quot;^[\.\s,;]+$&quot;
+| extend Score = toint(DeletesMail) * 2 + toint(MarksRead) + toint(HiddenFolder) * 2 + toint(KeywordHit) * 2
+    + toint(isnotempty(ForwardTo)) * 3 + toint(ShortName)
+| where Score &gt;= 3
+| project TimeGenerated, UserId, ClientIP, Operation, RuleName, Score, DeletesMail, MarksRead, MoveTo, ForwardTo, Words
+| order by Score desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Users filing vendor invoices into an &quot;Archive&quot; folder with mark-as-read.</li></ul><ul><li>Raise the Score threshold to 4 if your users heavily automate mailbox filing.</li><li>Pair with MailboxThreatHunter for a tenant-wide sweep of existing rules (this rule only sees new changes).</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/security/operations/incident-response-playbook-compromised-malicious-app" rel="noopener">https://learn.microsoft.com/security/operations/incident-response-playbook-compromised-malicious-app</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0016" data-sev="High" data-search="kdl-0016 mailbox forwarding to an external address configured detects set-mailbox changes that add smtp forwarding (forwardingsmtpaddress or forwardingaddress) to a domain outside the organization. mailbox-level forwarding is invisible to the user in outlook and silently copies every message out.
+ collection exfiltration t1114.003 officeactivity email collection: email forwarding rule">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0016</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Mailbox forwarding to an external address configured</h2>
+  <p>Detects Set-Mailbox changes that add SMTP forwarding (ForwardingSmtpAddress or ForwardingAddress) to a domain outside the organization. Mailbox-level forwarding is invisible to the user in Outlook and silently copies every message out.</p>
+  <div class="chips"><span class="chip">Collection</span><span class="chip">Exfiltration</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1114/003/" title="Email Collection: Email Forwarding Rule">T1114.003</a></div>
+  <p class="meta"><strong>Tables:</strong> OfficeActivity &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0016">Copy</button>
+    <pre><code id="q-KDL-0016">// List your accepted domains so internal forwarding is not flagged.
+let internalDomains = dynamic([&quot;contoso.com&quot;, &quot;contoso.onmicrosoft.com&quot;]);
+OfficeActivity
+| where TimeGenerated &gt; ago(1h)
+| where Operation in (&quot;Set-Mailbox&quot;, &quot;New-TransportRule&quot;, &quot;Set-TransportRule&quot;)
+| extend Params = parse_json(Parameters)
+| mv-apply p = Params on (
+    summarize P = make_bag(bag_pack(tostring(p.Name), tostring(p.Value)))
+  )
+| extend ForwardTo = tostring(coalesce(P.ForwardingSmtpAddress, P.ForwardingAddress,
+    P.RedirectMessageTo, P.BlindCopyTo, P.CopyTo))
+| where isnotempty(ForwardTo)
+| extend ForwardDomain = tolower(extract(@&quot;@([A-Za-z0-9\.\-]+)&quot;, 1, ForwardTo))
+| where isnotempty(ForwardDomain) and not(ForwardDomain in (internalDomains))
+| extend DeliverToMailboxAndForward = tostring(P.DeliverToMailboxAndForward)
+| project TimeGenerated, Operation, Actor = UserId, ClientIP, Target = OfficeObjectId,
+    ForwardTo, ForwardDomain, DeliverToMailboxAndForward</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Executives forwarding to an approved personal assistant service; mergers with not-yet-accepted domains.</li></ul><ul><li>Block automatic external forwarding with the outbound spam policy; this rule then catches policy bypass attempts.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/defender-office-365/outbound-spam-policies-external-email-forwarding" rel="noopener">https://learn.microsoft.com/defender-office-365/outbound-spam-policies-external-email-forwarding</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0018" data-sev="High" data-search="kdl-0018 user clicked a link in an email later removed by zap zero-hour auto purge (zap) removes phishing that was only identified after delivery. zap cleans the mailbox but cannot undo a click that already happened. this joins post-delivery zap actions with safe links click events so the soc can reset credentials for the users who actually clicked.
+ initialaccess t1566.002 emailpostdeliveryevents urlclickevents emailevents phishing: spearphishing link">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0018</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>User clicked a link in an email later removed by ZAP</h2>
+  <p>Zero-hour auto purge (ZAP) removes phishing that was only identified after delivery. ZAP cleans the mailbox but cannot undo a click that already happened. This joins post-delivery ZAP actions with Safe Links click events so the SOC can reset credentials for the users who actually clicked.</p>
+  <div class="chips"><span class="chip">Initial Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1566/002/" title="Phishing: Spearphishing Link">T1566.002</a></div>
+  <p class="meta"><strong>Tables:</strong> EmailPostDeliveryEvents, UrlClickEvents, EmailEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1d</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0018">Copy</button>
+    <pre><code id="q-KDL-0018">let lookback = 1d;
+let zapped = EmailPostDeliveryEvents
+| where Timestamp &gt; ago(lookback)
+| where ActionType in (&quot;Phish ZAP&quot;, &quot;Malware ZAP&quot;)
+| project ZapTime = Timestamp, NetworkMessageId, ZapAction = ActionType, RecipientEmailAddress;
+UrlClickEvents
+| where Timestamp &gt; ago(lookback)
+| where ActionType in (&quot;ClickAllowed&quot;, &quot;UrlScanInProgress&quot;) or IsClickedThrough == true
+| project ClickTime = Timestamp, NetworkMessageId, AccountUpn, Url, ClickAction = ActionType, IPAddress
+| join kind=inner zapped on NetworkMessageId
+| where ClickTime &lt;= ZapTime
+| join kind=leftouter (EmailEvents | where Timestamp &gt; ago(lookback)
+    | project NetworkMessageId, Subject, SenderFromAddress, SenderIPv4) on NetworkMessageId
+| project ClickTime, ZapTime, AccountUpn, Url, ClickAction, ZapAction, Subject, SenderFromAddress, SenderIPv4, IPAddress</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Rare; ZAP false positives on legitimate bulk mail occasionally occur.</li></ul><ul><li>Feed results into an automated &quot;revoke sessions + require password change&quot; playbook.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/defender-office-365/zero-hour-auto-purge" rel="noopener">https://learn.microsoft.com/defender-office-365/zero-hour-auto-purge</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0021" data-sev="High" data-search="kdl-0021 shadow copy or backup catalog deletion (pre-ransomware) ransomware operators delete volume shadow copies, the windows backup catalog and disable recovery mode right before encryption so victims cannot roll back. these commands almost never run legitimately on endpoints and should trigger isolation.
+ impact t1490 deviceprocessevents inhibit system recovery">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0021</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>Shadow copy or backup catalog deletion (pre-ransomware)</h2>
+  <p>Ransomware operators delete Volume Shadow Copies, the Windows backup catalog and disable recovery mode right before encryption so victims cannot roll back. These commands almost never run legitimately on endpoints and should trigger isolation.</p>
+  <div class="chips"><span class="chip">Impact</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1490/" title="Inhibit System Recovery">T1490</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceProcessEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 15m, looking back 15m</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0021">Copy</button>
+    <pre><code id="q-KDL-0021">DeviceProcessEvents
+| where Timestamp &gt; ago(15m)
+| where (FileName =~ &quot;vssadmin.exe&quot; and ProcessCommandLine has_all (&quot;delete&quot;, &quot;shadows&quot;))
+    or (FileName =~ &quot;vssadmin.exe&quot; and ProcessCommandLine has_all (&quot;resize&quot;, &quot;shadowstorage&quot;))
+    or (FileName =~ &quot;wmic.exe&quot; and ProcessCommandLine has_all (&quot;shadowcopy&quot;, &quot;delete&quot;))
+    or (FileName =~ &quot;wbadmin.exe&quot; and ProcessCommandLine has_any (&quot;delete catalog&quot;, &quot;delete systemstatebackup&quot;))
+    or (FileName =~ &quot;bcdedit.exe&quot; and ProcessCommandLine has_any (&quot;recoveryenabled no&quot;, &quot;bootstatuspolicy ignoreallfailures&quot;))
+    or (FileName in~ (&quot;powershell.exe&quot;, &quot;pwsh.exe&quot;) and ProcessCommandLine has &quot;Win32_ShadowCopy&quot; and ProcessCommandLine has_any (&quot;Delete&quot;, &quot;Remove-&quot;))
+| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine,
+    InitiatingProcessFileName, InitiatingProcessCommandLine, InitiatingProcessSHA256</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Backup software resizing shadow storage (validate the parent process and signer).</li></ul><ul><li>Wire to an automated device isolation response; minutes matter here.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1490/" rel="noopener">https://attack.mitre.org/techniques/T1490/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0022" data-sev="High" data-search="kdl-0022 lsass memory dump via comsvcs.dll or procdump dumping lsass memory yields cached credentials and kerberos tickets. common living-off-the-land variants call comsvcs.dll minidump through rundll32 or use sysinternals procdump against lsass. credential guard and asr rules mitigate this; the detection catches attempts on machines where they are not yet enforced.
+ credentialaccess t1003.001 deviceprocessevents os credential dumping: lsass memory">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0022</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>LSASS memory dump via comsvcs.dll or procdump</h2>
+  <p>Dumping LSASS memory yields cached credentials and Kerberos tickets. Common living-off-the-land variants call comsvcs.dll MiniDump through rundll32 or use Sysinternals procdump against lsass. Credential Guard and ASR rules mitigate this; the detection catches attempts on machines where they are not yet enforced.</p>
+  <div class="chips"><span class="chip">Credential Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1003/001/" title="OS Credential Dumping: LSASS Memory">T1003.001</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceProcessEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 15m, looking back 15m</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0022">Copy</button>
+    <pre><code id="q-KDL-0022">DeviceProcessEvents
+| where Timestamp &gt; ago(15m)
+| where (FileName =~ &quot;rundll32.exe&quot; and ProcessCommandLine has &quot;comsvcs&quot; and ProcessCommandLine has_any (&quot;MiniDump&quot;, &quot;#24&quot;, &quot;#+24&quot;))
+    or (FileName in~ (&quot;procdump.exe&quot;, &quot;procdump64.exe&quot;) and ProcessCommandLine has &quot;lsass&quot;)
+    or (ProcessCommandLine has &quot;lsass&quot; and ProcessCommandLine has_any (&quot;sekurlsa&quot;, &quot;minidump&quot;, &quot;.dmp&quot;) and FileName !in~ (&quot;MsMpEng.exe&quot;, &quot;WerFault.exe&quot;))
+| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine,
+    InitiatingProcessFileName, InitiatingProcessCommandLine, ProcessIntegrityLevel</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Authorized troubleshooting dumps by Microsoft support or an IR team (should be ticketed).</li></ul><ul><li>Enable the ASR rule &quot;Block credential stealing from the Windows local security authority subsystem&quot;.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1003/001/" rel="noopener">https://attack.mitre.org/techniques/T1003/001/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0024" data-sev="High" data-search="kdl-0024 inbound rdp accepted from a public ip address internet-exposed rdp is one of the most common ransomware entry points. this flags devices that accepted inbound rdp (tcp 3389) from a public ip, which means a firewall or nat rule is exposing the host directly.
+ initialaccess lateralmovement t1133 t1021.001 devicenetworkevents external remote services remote services: remote desktop protocol">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0024</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>Inbound RDP accepted from a public IP address</h2>
+  <p>Internet-exposed RDP is one of the most common ransomware entry points. This flags devices that accepted inbound RDP (TCP 3389) from a public IP, which means a firewall or NAT rule is exposing the host directly.</p>
+  <div class="chips"><span class="chip">Initial Access</span><span class="chip">Lateral Movement</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1133/" title="External Remote Services">T1133</a><a class="chip tech" href="https://attack.mitre.org/techniques/T1021/001/" title="Remote Services: Remote Desktop Protocol">T1021.001</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceNetworkEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0024">Copy</button>
+    <pre><code id="q-KDL-0024">DeviceNetworkEvents
+| where Timestamp &gt; ago(1h)
+| where ActionType == &quot;InboundConnectionAccepted&quot;
+| where LocalPort == 3389
+| where RemoteIPType == &quot;Public&quot;
+| summarize Connections = count(), RemoteIPs = make_set(RemoteIP, 50), FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp) by DeviceName, LocalIP
+| order by Connections desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Hosts behind an RD Gateway that is itself logging the public client IP (verify topology).</li></ul><ul><li>The fix is the firewall rule, not the detection - move access behind VPN or RD Gateway with MFA.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1133/" rel="noopener">https://attack.mitre.org/techniques/T1133/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0025" data-sev="High" data-search="kdl-0025 office application spawned a script interpreter or lolbin word, excel, powerpoint or outlook launching cmd, powershell, wscript, mshta or rundll32 is the textbook macro / malicious-attachment execution chain. asr rules can block this; the detection covers audit-mode devices and gaps.
+ execution t1204.002 t1059 deviceprocessevents user execution: malicious file command and scripting interpreter">
+  <header>
+    <span class="sev sev-high">High</span>
+    <span class="id">KDL-0025</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>Office application spawned a script interpreter or LOLBin</h2>
+  <p>Word, Excel, PowerPoint or Outlook launching cmd, PowerShell, wscript, mshta or rundll32 is the textbook macro / malicious-attachment execution chain. ASR rules can block this; the detection covers audit-mode devices and gaps.</p>
+  <div class="chips"><span class="chip">Execution</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1204/002/" title="User Execution: Malicious File">T1204.002</a><a class="chip tech" href="https://attack.mitre.org/techniques/T1059/" title="Command and Scripting Interpreter">T1059</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceProcessEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0025">Copy</button>
+    <pre><code id="q-KDL-0025">let officeApps = dynamic([&quot;winword.exe&quot;, &quot;excel.exe&quot;, &quot;powerpnt.exe&quot;, &quot;outlook.exe&quot;, &quot;onenote.exe&quot;, &quot;mspub.exe&quot;, &quot;visio.exe&quot;]);
+let children = dynamic([&quot;cmd.exe&quot;, &quot;powershell.exe&quot;, &quot;pwsh.exe&quot;, &quot;wscript.exe&quot;, &quot;cscript.exe&quot;, &quot;mshta.exe&quot;,
+    &quot;rundll32.exe&quot;, &quot;regsvr32.exe&quot;, &quot;certutil.exe&quot;, &quot;bitsadmin.exe&quot;, &quot;msbuild.exe&quot;, &quot;installutil.exe&quot;]);
+DeviceProcessEvents
+| where Timestamp &gt; ago(1h)
+| where InitiatingProcessFileName in~ (officeApps)
+| where FileName in~ (children)
+| project Timestamp, DeviceName, AccountName, Parent = InitiatingProcessFileName, Child = FileName,
+    ProcessCommandLine, ParentCommandLine = InitiatingProcessCommandLine, SHA256</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Legacy Excel add-ins or finance macros that shell out (inventory and sign them).</li></ul><ul><li>Enable ASR &quot;Block all Office applications from creating child processes&quot; in block mode once this is quiet.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/defender-endpoint/attack-surface-reduction-rules-reference" rel="noopener">https://learn.microsoft.com/defender-endpoint/attack-surface-reduction-rules-reference</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0001" data-sev="Medium" data-search="kdl-0001 successful sign-in using legacy authentication detects successful entra id sign-ins that used a legacy authentication protocol (imap, pop3, smtp auth, activesync, ews basic, etc.). legacy protocols cannot enforce mfa, so a successful legacy sign-in is a common foothold for password spray and credential stuffing. in a tenant that has blocked legacy auth with conditional access, any hit is either a policy gap or a misconfigured exclusion.
+ initialaccess defenseevasion t1078.004 signinlogs valid accounts: cloud accounts">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0001</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Successful sign-in using legacy authentication</h2>
+  <p>Detects successful Entra ID sign-ins that used a legacy authentication protocol (IMAP, POP3, SMTP AUTH, ActiveSync, EWS basic, etc.). Legacy protocols cannot enforce MFA, so a successful legacy sign-in is a common foothold for password spray and credential stuffing. In a tenant that has blocked legacy auth with Conditional Access, any hit is either a policy gap or a misconfigured exclusion.</p>
+  <div class="chips"><span class="chip">Initial Access</span><span class="chip">Defense Evasion</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1078/004/" title="Valid Accounts: Cloud Accounts">T1078.004</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0001">Copy</button>
+    <pre><code id="q-KDL-0001">let modernClients = dynamic([&quot;Browser&quot;, &quot;Mobile Apps and Desktop clients&quot;]);
+SigninLogs
+| where TimeGenerated &gt; ago(1h)
+| where ResultType == &quot;0&quot;
+| where isnotempty(ClientAppUsed) and ClientAppUsed !in (modernClients)
+| extend Country = tostring(LocationDetails.countryOrRegion)
+| summarize SignIns = count(), Apps = make_set(AppDisplayName, 10),
+    Protocols = make_set(ClientAppUsed, 10), IPs = make_set(IPAddress, 20),
+    Countries = make_set(Country, 10), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated)
+    by UserPrincipalName
+| order by SignIns desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Multifunction printers / scanners using SMTP AUTH for scan-to-email.</li><li>Line-of-business apps still using EWS basic auth or IMAP service accounts.</li></ul><ul><li>Move known service accounts to a watchlist and exclude them explicitly, then fix them.</li><li>Pair with a Conditional Access policy that blocks &quot;Other clients&quot; and &quot;Exchange ActiveSync clients&quot;.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/conditional-access/policy-block-legacy-authentication" rel="noopener">https://learn.microsoft.com/entra/identity/conditional-access/policy-block-legacy-authentication</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0004" data-sev="Medium" data-search="kdl-0004 successful sign-in from a country not seen for the user in 14 days builds a 14-day per-user country baseline from successful sign-ins and alerts when a user successfully signs in from a country outside that baseline. simple, explainable and hard to evade without a residential proxy in the right country.
+ initialaccess t1078.004 signinlogs valid accounts: cloud accounts">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0004</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Successful sign-in from a country not seen for the user in 14 days</h2>
+  <p>Builds a 14-day per-user country baseline from successful sign-ins and alerts when a user successfully signs in from a country outside that baseline. Simple, explainable and hard to evade without a residential proxy in the right country.</p>
+  <div class="chips"><span class="chip">Initial Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1078/004/" title="Valid Accounts: Cloud Accounts">T1078.004</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 14d</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0004">Copy</button>
+    <pre><code id="q-KDL-0004">let lookback = 14d;
+let recent = 1h;
+let baseline = SigninLogs
+| where TimeGenerated between (ago(lookback) .. ago(recent))
+| where ResultType == &quot;0&quot;
+| extend Country = tostring(LocationDetails.countryOrRegion)
+| where isnotempty(Country)
+| summarize KnownCountries = make_set(Country, 50) by UserPrincipalName;
+SigninLogs
+| where TimeGenerated &gt; ago(recent)
+| where ResultType == &quot;0&quot;
+| extend Country = tostring(LocationDetails.countryOrRegion), City = tostring(LocationDetails.city)
+| where isnotempty(Country)
+| join kind=inner baseline on UserPrincipalName
+| where not(set_has_element(KnownCountries, Country))
+| summarize FirstSeen = min(TimeGenerated), IPs = make_set(IPAddress, 10), Apps = make_set(AppDisplayName, 10)
+    by UserPrincipalName, Country, City, Baseline = tostring(KnownCountries)</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Business travel; staff using a personal VPN or a mobile carrier that geolocates abroad.</li></ul><ul><li>Users with no baseline (new hires) are excluded by the inner join on purpose; cover them with a separate new-user rule.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/monitoring-health/concept-sign-ins" rel="noopener">https://learn.microsoft.com/entra/identity/monitoring-health/concept-sign-ins</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0006" data-sev="Medium" data-search="kdl-0006 admin portal sign-in where conditional access was not applied successful sign-ins to azure, entra or microsoft 365 admin surfaces where no conditional access policy applied. admin portals should always be covered by an mfa (ideally phishing-resistant) policy; &quot;notapplied&quot; means a policy gap or an excluded account, both of which matter on admin access.
+ initialaccess defenseevasion t1078.004 signinlogs valid accounts: cloud accounts">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0006</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Admin portal sign-in where Conditional Access was not applied</h2>
+  <p>Successful sign-ins to Azure, Entra or Microsoft 365 admin surfaces where no Conditional Access policy applied. Admin portals should always be covered by an MFA (ideally phishing-resistant) policy; &quot;notApplied&quot; means a policy gap or an excluded account, both of which matter on admin access.</p>
+  <div class="chips"><span class="chip">Initial Access</span><span class="chip">Defense Evasion</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1078/004/" title="Valid Accounts: Cloud Accounts">T1078.004</a></div>
+  <p class="meta"><strong>Tables:</strong> SigninLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0006">Copy</button>
+    <pre><code id="q-KDL-0006">let adminApps = dynamic([&quot;Azure Portal&quot;, &quot;Microsoft Azure PowerShell&quot;, &quot;Microsoft Azure CLI&quot;,
+    &quot;Microsoft Admin Portals&quot;, &quot;Microsoft 365 Security and Compliance Center&quot;,
+    &quot;Microsoft Graph Command Line Tools&quot;, &quot;Windows Azure Service Management API&quot;]);
+SigninLogs
+| where TimeGenerated &gt; ago(1h)
+| where ResultType == &quot;0&quot;
+| where AppDisplayName in~ (adminApps)
+| where ConditionalAccessStatus == &quot;notApplied&quot;
+| extend Country = tostring(LocationDetails.countryOrRegion)
+| summarize SignIns = count(), Apps = make_set(AppDisplayName), IPs = make_set(IPAddress, 10),
+    Countries = make_set(Country), LastSeen = max(TimeGenerated) by UserPrincipalName</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Break-glass accounts (covered separately by KDL-0005).</li></ul><ul><li>Prefer fixing the CA gap (&quot;All users&quot; + &quot;Microsoft Admin Portals&quot; target) over excluding accounts here.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/conditional-access/how-to-policy-mfa-admin-portals" rel="noopener">https://learn.microsoft.com/entra/identity/conditional-access/how-to-policy-mfa-admin-portals</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0009" data-sev="Medium" data-search="kdl-0009 conditional access policy modified, disabled or deleted any change to conditional access policies. attackers with admin rights weaken ca (add an exclusion, switch to report-only, delete an mfa policy) to keep access quietly. the modified properties are expanded so the analyst can see what changed without opening the portal.
+ defenseevasion persistence t1556.009 auditlogs modify authentication process: conditional access policies">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0009</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Conditional Access policy modified, disabled or deleted</h2>
+  <p>Any change to Conditional Access policies. Attackers with admin rights weaken CA (add an exclusion, switch to report-only, delete an MFA policy) to keep access quietly. The modified properties are expanded so the analyst can see what changed without opening the portal.</p>
+  <div class="chips"><span class="chip">Defense Evasion</span><span class="chip">Persistence</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1556/009/" title="Modify Authentication Process: Conditional Access Policies">T1556.009</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0009">Copy</button>
+    <pre><code id="q-KDL-0009">AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName in (&quot;Update conditional access policy&quot;, &quot;Delete conditional access policy&quot;,
+    &quot;Add conditional access policy&quot;)
+| extend Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName), tostring(InitiatedBy.app.displayName))
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend PolicyName = tostring(TargetResources[0].displayName)
+| extend NewValue = tostring(TargetResources[0].modifiedProperties[0].newValue)
+| extend OldValue = tostring(TargetResources[0].modifiedProperties[0].oldValue)
+| extend NewState = extract(@&#x27;&quot;state&quot;:&quot;(\w+)&quot;&#x27;, 1, NewValue), OldState = extract(@&#x27;&quot;state&quot;:&quot;(\w+)&quot;&#x27;, 1, OldValue)
+| extend Weakened = OperationName == &quot;Delete conditional access policy&quot;
+    or (OldState == &quot;enabled&quot; and NewState in (&quot;disabled&quot;, &quot;enabledForReportingButNotEnforced&quot;))
+| project TimeGenerated, OperationName, PolicyName, Actor, ActorIP, OldState, NewState, Weakened, OldValue, NewValue
+| order by Weakened desc, TimeGenerated desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Planned change-controlled CA updates.</li></ul><ul><li>Raise severity to High when Weakened is true; pair with ConditionalAccessDrift snapshots for full diffs.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1556/009/" rel="noopener">https://attack.mitre.org/techniques/T1556/009/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0012" data-sev="Medium" data-search="kdl-0012 credentials added to an application or service principal adding a client secret or certificate to an existing app registration or service principal lets an attacker authenticate as that app with whatever graph permissions it already holds - often far more than any single user. seen in real-world tenant compromises (e.g. solorigate, midnight blizzard).
+ persistence privilegeescalation t1098.001 auditlogs account manipulation: additional cloud credentials">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0012</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Credentials added to an application or service principal</h2>
+  <p>Adding a client secret or certificate to an existing app registration or service principal lets an attacker authenticate as that app with whatever Graph permissions it already holds - often far more than any single user. Seen in real-world tenant compromises (e.g. Solorigate, Midnight Blizzard).</p>
+  <div class="chips"><span class="chip">Persistence</span><span class="chip">Privilege Escalation</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1098/001/" title="Account Manipulation: Additional Cloud Credentials">T1098.001</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0012">Copy</button>
+    <pre><code id="q-KDL-0012">AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName has_any (&quot;Add service principal credentials&quot;, &quot;Certificates and secrets management&quot;)
+| where Result == &quot;success&quot;
+| extend Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName), tostring(InitiatedBy.app.displayName))
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend AppName = tostring(TargetResources[0].displayName), ObjectId = tostring(TargetResources[0].id)
+| mv-apply prop = TargetResources[0].modifiedProperties on (
+    where tostring(prop.displayName) == &quot;KeyDescription&quot;
+    | extend NewKeys = tostring(prop.newValue), OldKeys = tostring(prop.oldValue)
+  )
+| extend KeyType = case(NewKeys has &quot;KeyType=AsymmetricX509Cert&quot;, &quot;Certificate&quot;,
+                        NewKeys has &quot;KeyType=Password&quot;, &quot;ClientSecret&quot;, &quot;Unknown&quot;)
+| project TimeGenerated, OperationName, Actor, ActorIP, AppName, ObjectId, KeyType, NewKeys</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Scheduled secret rotation by a known automation account or DevOps pipeline.</li></ul><ul><li>Exclude the rotation pipeline&#x27;s service principal by object ID, not display name.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1098/001/" rel="noopener">https://attack.mitre.org/techniques/T1098/001/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0014" data-sev="Medium" data-search="kdl-0014 unusual volume of bitlocker recovery key reads helpdesk staff read bitlocker recovery keys one device at a time. a single account reading many keys in a short window looks like bulk harvesting - recovery keys unlock stolen laptops and are a quiet exfiltration target after an admin compromise.
+ credentialaccess t1552 auditlogs unsecured credentials">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0014</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>Unusual volume of BitLocker recovery key reads</h2>
+  <p>Helpdesk staff read BitLocker recovery keys one device at a time. A single account reading many keys in a short window looks like bulk harvesting - recovery keys unlock stolen laptops and are a quiet exfiltration target after an admin compromise.</p>
+  <div class="chips"><span class="chip">Credential Access</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1552/" title="Unsecured Credentials">T1552</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0014">Copy</button>
+    <pre><code id="q-KDL-0014">let threshold = 5;
+AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where OperationName == &quot;Read BitLocker key&quot;
+| extend Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName), tostring(InitiatedBy.app.displayName))
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend Device = extract(@&quot;device: (\S+)&quot;, 1, tostring(AdditionalDetails))
+| summarize KeysRead = count(), Devices = make_set(Device, 50), FirstRead = min(TimeGenerated),
+    LastRead = max(TimeGenerated) by Actor, ActorIP
+| where KeysRead &gt;= threshold</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>A helpdesk recovering a batch of devices after a failed BIOS/firmware update.</li></ul><ul><li>Restrict who can read recovery keys (custom role with microsoft.directory/bitlockerKeys/key/read).</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/identity/devices/manage-device-identities#view-or-copy-bitlocker-keys" rel="noopener">https://learn.microsoft.com/entra/identity/devices/manage-device-identities#view-or-copy-bitlocker-keys</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0017" data-sev="Medium" data-search="kdl-0017 fullaccess or sendas permission granted on a mailbox adding fullaccess, sendas or sendonbehalf rights lets one account read or send as another mailbox. after an admin compromise, attackers grant themselves access to executive or finance mailboxes rather than stealing each password separately.
+ persistence collection t1098.002 officeactivity account manipulation: additional email delegate permissions">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0017</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>FullAccess or SendAs permission granted on a mailbox</h2>
+  <p>Adding FullAccess, SendAs or SendOnBehalf rights lets one account read or send as another mailbox. After an admin compromise, attackers grant themselves access to executive or finance mailboxes rather than stealing each password separately.</p>
+  <div class="chips"><span class="chip">Persistence</span><span class="chip">Collection</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1098/002/" title="Account Manipulation: Additional Email Delegate Permissions">T1098.002</a></div>
+  <p class="meta"><strong>Tables:</strong> OfficeActivity &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0017">Copy</button>
+    <pre><code id="q-KDL-0017">OfficeActivity
+| where TimeGenerated &gt; ago(1h)
+| where Operation in (&quot;Add-MailboxPermission&quot;, &quot;Add-RecipientPermission&quot;, &quot;Set-Mailbox&quot;)
+| extend Params = parse_json(Parameters)
+| mv-apply p = Params on (
+    summarize P = make_bag(bag_pack(tostring(p.Name), tostring(p.Value)))
+  )
+| extend Rights = strcat(tostring(P.AccessRights), tostring(P.GrantSendOnBehalfTo))
+| where Rights has_any (&quot;FullAccess&quot;, &quot;SendAs&quot;) or isnotempty(tostring(P.GrantSendOnBehalfTo))
+| extend Mailbox = tostring(coalesce(P.Identity, OfficeObjectId)), Grantee = tostring(coalesce(P.User, P.Trustee, P.GrantSendOnBehalfTo))
+| where Grantee !startswith &quot;NT AUTHORITY&quot;
+| project TimeGenerated, Operation, Actor = UserId, ClientIP, Mailbox, Grantee, Rights</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Helpdesk granting a manager access to a departed employee&#x27;s mailbox (should have a ticket).</li></ul><ul><li>Raise severity when Mailbox is on a VIP / finance watchlist.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1098/002/" rel="noopener">https://attack.mitre.org/techniques/T1098/002/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0019" data-sev="Medium" data-search="kdl-0019 living-off-the-land binary used to download a file certutil, bitsadmin, mshta, regsvr32 and friends are signed windows binaries that can fetch remote payloads, so they slip past naive allow-listing. their download switches are rarely used legitimately on user workstations.
+ commandandcontrol defenseevasion t1105 t1218 deviceprocessevents ingress tool transfer system binary proxy execution">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0019</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>Living-off-the-land binary used to download a file</h2>
+  <p>certutil, bitsadmin, mshta, regsvr32 and friends are signed Windows binaries that can fetch remote payloads, so they slip past naive allow-listing. Their download switches are rarely used legitimately on user workstations.</p>
+  <div class="chips"><span class="chip">Command and Control</span><span class="chip">Defense Evasion</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1105/" title="Ingress Tool Transfer">T1105</a><a class="chip tech" href="https://attack.mitre.org/techniques/T1218/" title="System Binary Proxy Execution">T1218</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceProcessEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0019">Copy</button>
+    <pre><code id="q-KDL-0019">DeviceProcessEvents
+| where Timestamp &gt; ago(1h)
+| where (FileName =~ &quot;certutil.exe&quot; and ProcessCommandLine has_any (&quot;urlcache&quot;, &quot;verifyctl&quot;) and ProcessCommandLine has &quot;http&quot;)
+    or (FileName =~ &quot;bitsadmin.exe&quot; and ProcessCommandLine has_any (&quot;/transfer&quot;, &quot;/addfile&quot;) )
+    or (FileName =~ &quot;mshta.exe&quot; and ProcessCommandLine has_any (&quot;http:&quot;, &quot;https:&quot;, &quot;javascript:&quot;, &quot;vbscript:&quot;))
+    or (FileName =~ &quot;regsvr32.exe&quot; and ProcessCommandLine has &quot;/i:&quot; and ProcessCommandLine has &quot;http&quot;)
+    or (FileName in~ (&quot;powershell.exe&quot;, &quot;pwsh.exe&quot;) and ProcessCommandLine has_any (&quot;DownloadFile&quot;, &quot;DownloadString&quot;, &quot;Invoke-WebRequest&quot;, &quot;iwr &quot;, &quot;Start-BitsTransfer&quot;) and ProcessCommandLine has &quot;http&quot;)
+| extend Url = extract(@&quot;(https?://[^\s&#x27;&quot;&quot;]+)&quot;, 1, ProcessCommandLine)
+| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, Url,
+    InitiatingProcessFileName, InitiatingProcessCommandLine, SHA256</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Software deployment or RMM scripts that pull installers with PowerShell.</li></ul><ul><li>Exclude your RMM agent by InitiatingProcessFileName plus signer, not by command line text.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://lolbas-project.github.io/" rel="noopener">https://lolbas-project.github.io/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0020" data-sev="Medium" data-search="kdl-0020 powershell launched with an encoded command -encodedcommand hides the real script from casual inspection and is heavily used by malware loaders. the query decodes the base64 (utf-16le) payload inline so the analyst sees the actual script without leaving the results grid.
+ execution defenseevasion t1059.001 t1027 deviceprocessevents command and scripting interpreter: powershell obfuscated files or information">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0020</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>PowerShell launched with an encoded command</h2>
+  <p>-EncodedCommand hides the real script from casual inspection and is heavily used by malware loaders. The query decodes the Base64 (UTF-16LE) payload inline so the analyst sees the actual script without leaving the results grid.</p>
+  <div class="chips"><span class="chip">Execution</span><span class="chip">Defense Evasion</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1059/001/" title="Command and Scripting Interpreter: PowerShell">T1059.001</a><a class="chip tech" href="https://attack.mitre.org/techniques/T1027/" title="Obfuscated Files or Information">T1027</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceProcessEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0020">Copy</button>
+    <pre><code id="q-KDL-0020">DeviceProcessEvents
+| where Timestamp &gt; ago(1h)
+| where FileName in~ (&quot;powershell.exe&quot;, &quot;pwsh.exe&quot;, &quot;powershell_ise.exe&quot;)
+| where ProcessCommandLine matches regex @&quot;(?i)\s-(e|ec|en|enc|enco|encodedcommand)\s+[A-Za-z0-9+/=]{20,}&quot;
+| extend Encoded = extract(@&quot;(?i)\s-(?:e|ec|en|enc|enco|encodedcommand)\s+([A-Za-z0-9+/=]{20,})&quot;, 1, ProcessCommandLine)
+// -EncodedCommand is UTF-16LE: decode, then strip the interleaved NUL bytes.
+| extend Decoded = replace_regex(base64_decode_tostring(Encoded), @&quot;\x00&quot;, &quot;&quot;)
+| extend Suspicious = Decoded has_any (&quot;IEX&quot;, &quot;Invoke-Expression&quot;, &quot;DownloadString&quot;, &quot;FromBase64String&quot;,
+    &quot;Net.WebClient&quot;, &quot;AmsiUtils&quot;, &quot;-bxor&quot;, &quot;Reflection.Assembly&quot;)
+| project Timestamp, DeviceName, AccountName, Suspicious, Decoded, ProcessCommandLine,
+    InitiatingProcessFileName, InitiatingProcessCommandLine
+| order by Suspicious desc, Timestamp desc</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Some management agents (SCCM/Intune remediation, RMM tools) use -EncodedCommand legitimately.</li></ul><ul><li>Baseline by InitiatingProcessFileName for a week, then exclude known agents.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://attack.mitre.org/techniques/T1059/001/" rel="noopener">https://attack.mitre.org/techniques/T1059/001/</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0023" data-sev="Medium" data-search="kdl-0023 account added to local administrators group on an endpoint adding an account to the built-in administrators group (s-1-5-32-544) on a workstation or server grants persistent local admin. in an estate managed by intune / laps, ad-hoc additions outside those processes are suspicious.
+ persistence privilegeescalation t1098 deviceevents account manipulation">
+  <header>
+    <span class="sev sev-medium">Medium</span>
+    <span class="id">KDL-0023</span>
+    <span class="platforms">DefenderXDR · Sentinel</span>
+  </header>
+  <h2>Account added to local Administrators group on an endpoint</h2>
+  <p>Adding an account to the built-in Administrators group (S-1-5-32-544) on a workstation or server grants persistent local admin. In an estate managed by Intune / LAPS, ad-hoc additions outside those processes are suspicious.</p>
+  <div class="chips"><span class="chip">Persistence</span><span class="chip">Privilege Escalation</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1098/" title="Account Manipulation">T1098</a></div>
+  <p class="meta"><strong>Tables:</strong> DeviceEvents &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0023">Copy</button>
+    <pre><code id="q-KDL-0023">DeviceEvents
+| where Timestamp &gt; ago(1h)
+| where ActionType == &quot;UserAccountAddedToLocalGroup&quot;
+| extend Fields = parse_json(AdditionalFields)
+| extend GroupSid = tostring(Fields.GroupSid), GroupName = tostring(Fields.GroupName)
+| where GroupSid == &quot;S-1-5-32-544&quot;
+| project Timestamp, DeviceName, AddedAccountSid = AccountSid, AddedAccountName = AccountName, GroupName,
+    Actor = InitiatingProcessAccountName, InitiatingProcessFileName, InitiatingProcessCommandLine</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>Intune &quot;Local user group membership&quot; policy applying, or a technician&#x27;s approved elevation.</li></ul><ul><li>Exclude changes where InitiatingProcessFileName is the Intune Management Extension or your PAM agent.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/defender-xdr/advanced-hunting-deviceevents-table" rel="noopener">https://learn.microsoft.com/defender-xdr/advanced-hunting-deviceevents-table</a></li></ul></details>
+</article>
+<article class="card" id="KDL-0008" data-sev="Low" data-search="kdl-0008 pim role activation outside business hours surfaces pim activations of privileged roles outside defined business hours or on weekends. not malicious by itself, but an attacker holding an eligible admin&#x27;s session will activate roles whenever they get the chance - usually when the real admin is asleep.
+ privilegeescalation t1078.004 auditlogs valid accounts: cloud accounts">
+  <header>
+    <span class="sev sev-low">Low</span>
+    <span class="id">KDL-0008</span>
+    <span class="platforms">Sentinel</span>
+  </header>
+  <h2>PIM role activation outside business hours</h2>
+  <p>Surfaces PIM activations of privileged roles outside defined business hours or on weekends. Not malicious by itself, but an attacker holding an eligible admin&#x27;s session will activate roles whenever they get the chance - usually when the real admin is asleep.</p>
+  <div class="chips"><span class="chip">Privilege Escalation</span><a class="chip tech" href="https://attack.mitre.org/techniques/T1078/004/" title="Valid Accounts: Cloud Accounts">T1078.004</a></div>
+  <p class="meta"><strong>Tables:</strong> AuditLogs &nbsp;·&nbsp; <strong>Runs:</strong> every 1h, looking back 1h</p>
+  <details>
+    <summary>Query</summary>
+    <div class="qwrap"><button class="copy" type="button" data-copy="KDL-0008">Copy</button>
+    <pre><code id="q-KDL-0008">// Business hours in local time; adjust the offset for your region (Toronto = -5h, -4h in DST).
+let utcOffset = -5h;
+let startHour = 7;
+let endHour = 19;
+AuditLogs
+| where TimeGenerated &gt; ago(1h)
+| where LoggedByService == &quot;PIM&quot;
+| where OperationName has &quot;PIM activation&quot; and Result == &quot;success&quot;
+| extend LocalTime = TimeGenerated + utcOffset
+| extend LocalHour = hourofday(LocalTime), LocalDay = dayofweek(LocalTime)
+| where LocalHour &lt; startHour or LocalHour &gt;= endHour or LocalDay in (0d, 6d)
+| extend Actor = tostring(InitiatedBy.user.userPrincipalName)
+| extend ActorIP = tostring(InitiatedBy.user.ipAddress)
+| extend RoleName = tostring(TargetResources[0].displayName)
+| project TimeGenerated, LocalTime, Actor, ActorIP, RoleName, OperationName, ResultReason</code></pre></div>
+  </details>
+  <details>
+    <summary>False positives &amp; tuning</summary>
+    <ul><li>On-call admins and scheduled maintenance windows.</li></ul><ul><li>Join with an on-call watchlist to suppress expected activations.</li></ul>
+  </details>
+  <details><summary>References</summary><ul><li><a href="https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-how-to-use-audit-log" rel="noopener">https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-how-to-use-audit-log</a></li></ul></details>
+</article></main>
+  <footer>Built by <a href="https://github.com/CadGoose">George Mkahail (CadGoose)</a>. Source &amp; ARM export: <a href="https://github.com/CadGoose/kql-detection-library">github.com/CadGoose/kql-detection-library</a>.</footer>
+</div>
+<script>
+(() => {
+  const q = document.getElementById('q'), cards = [...document.querySelectorAll('.card')], none = document.getElementById('none');
+  let sev = '';
+  const apply = () => {
+    const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean); let shown = 0;
+    cards.forEach(c => { const ok = (!sev || c.dataset.sev === sev) && terms.every(t => c.dataset.search.includes(t));
+      c.classList.toggle('hidden', !ok); if (ok) shown++; });
+    none.classList.toggle('hidden', shown > 0);
+  };
+  q.addEventListener('input', apply);
+  document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => {
+    sev = b.dataset.sev; document.querySelectorAll('.filter').forEach(x => x.setAttribute('aria-pressed', String(x === b))); apply(); }));
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
+    const code = document.getElementById('q-' + b.dataset.copy).innerText;
+    try { await navigator.clipboard.writeText(code); b.textContent = 'Copied'; } catch { b.textContent = 'Select & copy'; }
+    setTimeout(() => b.textContent = 'Copy', 1500); }));
+})();
+</script>
+</body>
+</html>

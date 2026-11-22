@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://cadgoose.github.io/sitemap.xml
